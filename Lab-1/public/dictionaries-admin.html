@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Словники (Admin)</title>
+    <style>
+        td {padding:5px;}
+        button {margin: 5px;}
+    </style>
+</head>
+<body>
+    <h2>Список словників</h2>
+    <div>
+        <input type="hidden" id="dictionaryId" />
+        <p>
+            Назва:<br/>
+            <input id="dictionaryName" />
+        </p>
+        <p>
+            Кількість сторінок:<br />
+            <input id="dictionaryPages" type="number" />
+        </p>
+         <p>
+            Автор:<br />
+            <input id="dictionaryAuthor" />
+        </p>
+        <p>
+            <button id="saveBtn">Зберегти</button>
+            <button id="resetBtn">Скинути</button>
+        </p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Назва</th>
+                <th>Кількість сторінок</th>
+                <th>Автор</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        async function getDictionaries() {
+            const response = await fetch("/api/dictionaries", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const dictionaries = await response.json();
+                const rows = document.querySelector("tbody");
+                dictionaries.forEach(dictionary => rows.append(row(dictionary)));
+            }
+        }
+
+        async function getDictionary(id) {
+            const response = await fetch(`/api/dictionaries/${id}`, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const dictionary = await response.json();
+                document.getElementById("dictionaryId").value = dictionary.id;
+                document.getElementById("dictionaryName").value = dictionary.name;
+                document.getElementById("dictionaryPages").value = dictionary.pages;
+                document.getElementById("dictionaryAuthor").value = dictionary.author;
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        async function createDictionary(name, pages, author) {
+            const response = await fetch("/admin/api/dictionaries", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name,
+                    pages: parseInt(pages, 10),
+                    author: author
+                })
+            });
+            if (response.ok === true) {
+                const dictionary = await response.json();
+                document.querySelector("tbody").append(row(dictionary));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        async function editDictionary(id, name, pages, author) {
+            const response = await fetch("/admin/api/dictionaries", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: id,
+                    name: name,
+                    pages: parseInt(pages, 10),
+                    author: author
+                })
+            });
+            if (response.ok === true) {
+                const dictionary = await response.json();
+                document.querySelector(`tr[data-rowid='${dictionary.id}']`).replaceWith(row(dictionary));
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        async function deleteDictionary(id) {
+            const response = await fetch(`/admin/api/dictionaries/${id}`, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const dictionary = await response.json();
+                document.querySelector(`tr[data-rowid='${dictionary.id}']`).remove();
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        function reset() {
+            document.getElementById("dictionaryId").value =
+            document.getElementById("dictionaryName").value =
+            document.getElementById("dictionaryPages").value =
+            document.getElementById("dictionaryAuthor").value = "";
+        }
+
+        function row(dictionary) {
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", dictionary.id);
+            const nameTd = document.createElement("td");
+            nameTd.append(dictionary.name);
+            tr.append(nameTd);
+            const pagesTd = document.createElement("td");
+            pagesTd.append(dictionary.pages);
+            tr.append(pagesTd);
+            const authorTd = document.createElement("td");
+            authorTd.append(dictionary.author);
+            tr.append(authorTd);
+            const linksTd = document.createElement("td");
+            const editLink = document.createElement("button");
+            editLink.append("Edit");
+            editLink.addEventListener("click", async() => await getDictionary(dictionary.id));
+            linksTd.append(editLink);
+            const removeLink = document.createElement("button");
+            removeLink.append("Delete");
+            removeLink.addEventListener("click", async () => await deleteDictionary(dictionary.id));
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+            return tr;
+        }
+
+        document.getElementById("resetBtn").addEventListener("click", () => reset());
+
+        document.getElementById("saveBtn").addEventListener("click", async () => {
+            const id = document.getElementById("dictionaryId").value;
+            const name = document.getElementById("dictionaryName").value;
+            const pages = document.getElementById("dictionaryPages").value;
+            const author = document.getElementById("dictionaryAuthor").value;
+            if (id === "")
+                await createDictionary(name, pages, author);
+            else
+                await editDictionary(id, name, pages, author);
+            reset();
+        });
+
+        getDictionaries();
+    </script>
+</body>
+</html>

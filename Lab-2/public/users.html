@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Користувачі</title>
+    <style>
+        td {padding:5px;}
+        button {margin: 5px;}
+    </style>
+</head>
+<body>
+    <h2>Список користувачів</h2>
+    <div>
+        <input type="hidden" id="userId" />
+        <p>
+            Ім'я:<br/>
+            <input id="userName" />
+        </p>
+        <p>
+            Вік:<br />
+            <input id="userAge" type="number" />
+        </p>
+        <p>
+            <button id="saveBtn">Зареєструватись</button>
+            <button id="resetBtn">Очистити</button>
+        </p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Ім'я</th>
+                <th>Вік</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        async function getUsers() {
+            const response = await fetch("/api/users", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const users = await response.json();
+                const rows = document.querySelector("tbody");
+                users.forEach(user => rows.append(row(user)));
+            }
+        }
+
+        async function createUser(userName, userAge) {
+            const response = await fetch("api/users", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: userName,
+                    age: parseInt(userAge, 10)
+                })
+            });
+            if (response.ok === true) {
+                const user = await response.json();
+                document.querySelector("tbody").append(row(user));
+            }
+
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        function reset() {
+            document.getElementById("userId").value =
+            document.getElementById("userName").value =
+            document.getElementById("userAge").value = "";
+        }
+
+        function row(user) {
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", user[0]);
+            const nameTd = document.createElement("td");
+            nameTd.append(user[1]);
+            tr.append(nameTd);
+            const ageTd = document.createElement("td");
+            ageTd.append(user[2]);
+            tr.append(ageTd);
+            return tr;
+        }
+
+        document.getElementById("resetBtn").addEventListener("click", () => reset());
+
+        document.getElementById("saveBtn").addEventListener("click", async () => {
+            const id = document.getElementById("userId").value;
+            const name = document.getElementById("userName").value;
+            const age = document.getElementById("userAge").value;
+            if (id === "")
+                await createUser(name, age);
+            else
+                await editUser(id, name, age);
+            reset();
+        });
+
+        getUsers();
+    </script>
+</body>
+</html>
