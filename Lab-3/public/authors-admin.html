@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Автори (Admin)</title>
+    <style>
+        td {padding:5px;}
+        button {margin: 5px;}
+    </style>
+</head>
+<body>
+    <h2>Список авторів</h2>
+    <div>
+        <input type="hidden" id="authorId" />
+        <p>
+            Назва:<br/>
+            <input id="authorName"/>
+        </p>
+        <p>
+            Кількість книг:<br />
+            <input id="authorBooks" type="number" />
+        </p>
+         <p>
+            Рейтинг:<br />
+            <input id="authorRating"/>
+        </p>
+        <p>
+            <button id="saveBtn">Зберегти</button>
+            <button id="resetBtn">Скинути</button>
+        </p>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Ім'я</th>
+                <th>Кількість книг</th>
+                <th>Рейтинг</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        async function getAuthors() {
+            const response = await fetch("/api/authors", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const authors = await response.json();
+                const rows = document.querySelector("tbody");
+                authors.forEach(author => rows.append(row(author)));
+            }
+        }
+
+        async function getAuthor(id) {
+            const response = await fetch(`/api/authors/${id}`, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const author = await response.json();
+                document.getElementById("authorId").value = author._id;
+                document.getElementById("authorName").value = author.name;
+                document.getElementById("authorBooks").value = author.books;
+                document.getElementById("authorRating").value = author.rating;
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        async function createAuthor(name, books, rating) {
+            const response = await fetch("api/authors", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: name,
+                    books: parseInt(books, 10),
+                    rating: parseInt(rating, 10)
+                })
+            });
+            if (response.ok === true) {
+                await getAuthors();  // Updated here
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        async function editAuthor(id, name, books, rating) {
+            const response = await fetch(`api/authors/${id}`, {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: id,
+                    name: name,
+                    books: parseInt(books, 10),
+                    rating: parseInt(rating, 10)
+                })
+            });
+            if (response.ok === true) {
+                await getAuthors();  // Updated here
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+
+        async function deleteAuthor(id) {
+            const response = await fetch(`/admin/api/authors/${id}`, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                await getAuthors();  // Updated here
+            }
+            else {
+                const error = await response.json();
+                console.log(error.message);
+            }
+        }
+
+        function reset() {
+            document.getElementById("authorId").value =
+            document.getElementById("authorName").value =
+            document.getElementById("authorBooks").value =
+            document.getElementById("authorRating").value = "";
+        }
+
+        function row(author) {
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", author.id);  // Fix here
+            const nameTd = document.createElement("td");
+            nameTd.append(author.name);  // Fix here
+            tr.append(nameTd);
+            const booksTd = document.createElement("td");
+            booksTd.append(author.books);  // Fix here
+            tr.append(booksTd);
+            const ratingTd = document.createElement("td");
+            ratingTd.append(author.rating);  // Fix here
+            tr.append(ratingTd);
+            const linksTd = document.createElement("td");
+            const editLink = document.createElement("button");
+            editLink.append("Edit");
+            editLink.addEventListener("click", async () => await getAuthor(author._id));
+            linksTd.append(editLink);
+            const removeLink = document.createElement("button");
+            removeLink.append("Delete");
+            removeLink.addEventListener("click", async () => await deleteAuthor(author._id));
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+            return tr;
+        }
+
+        document.getElementById("resetBtn").addEventListener("click", () => reset());
+
+        document.getElementById("saveBtn").addEventListener("click", async () => {
+            const id = document.getElementById("authorId").value;
+            const name = document.getElementById("authorName").value;
+            const books = document.getElementById("authorBooks").value;
+            const rating = document.getElementById("authorRating").value;
+            if (id === "")
+                await createAuthor(name, books, rating);
+            else
+                await editAuthor(id, name, books, rating);
+            reset();
+        });
+
+        getAuthors();
+    </script>
+</body>
+</html>

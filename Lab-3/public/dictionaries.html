@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Словники</title>
+    <style>
+        td {padding:5px;}
+        button {margin: 5px;}
+    </style>
+</head>
+<body>
+    <h2>Список словників</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Назва</th>
+                <th>Обсяг</th>
+                <th>Автор</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+    <script>
+        async function getDictionaries() {
+            const response = await fetch("/api/dictionaries", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const dictionaries = await response.json();
+                const rows = document.querySelector("tbody");
+                dictionaries.forEach(dictionary => rows.append(row(dictionary)));
+            }
+        }
+
+        function row(dictionary) {
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", dictionary.id); // Use 'id' property
+            const nameTd = document.createElement("td");
+            nameTd.append(dictionary.name); // Use 'name' property
+            tr.append(nameTd);
+            const pagesTd = document.createElement("td");
+            pagesTd.append(dictionary.pages); // Use 'pages' property
+            tr.append(pagesTd);
+            const authorTd = document.createElement("td");
+            authorTd.append(dictionary.author); // Use 'author' property
+            tr.append(authorTd);
+            return tr;
+        }
+
+        getDictionaries();
+    </script>
+</body>
+</html>
