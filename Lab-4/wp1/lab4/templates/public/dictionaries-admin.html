@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionary List</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $("#addDictionaryForm").submit(function(event){
+                event.preventDefault(); // Предотвращаем отправку формы по умолчанию
+                var formData = $(this).serialize(); // Получаем данные формы
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: $(this).attr('method'),
+                    data: formData,
+                    success: function(data){
+                        // Добавляем новый словарь к таблице
+                        var newDictionaryRow = "<tr><td>" + data.id + "</td><td>" + data.name + "</td><td>" + data.pages + "</td><td>" + data.author + "</td></tr>";
+                        $("#dictionaryTable tbody").append(newDictionaryRow);
+                        // Очищаем поля ввода
+                        $("#name").val("");
+                        $("#pages").val("");
+                        $("#author").val("");
+                    }
+                });
+            });
+            // Функція для обробки кліків на кнопку Edit
+            $(document).on('click', '.editDictionary', function(){
+                var dictionaryId = $(this).data('id');
+                var dictionaryName = $(this).closest('tr').find('.dictionaryName').text();
+                var dictionaryPages = $(this).closest('tr').find('.dictionaryPages').text();
+                var dictionaryAuthor = $(this).closest('tr').find('.dictionaryAuthor').text();
+                var newName = prompt("Enter new name", dictionaryName);
+                var newPages = prompt("Enter new pages", dictionaryPages);
+                var newAuthor = prompt("Enter new author", dictionaryAuthor);
+                if (newName !== null && newPages !== null && newAuthor !== null) {
+                    $.ajax({
+                        url: '/edit_dictionary/' + dictionaryId + '/',
+                        type: 'PUT',
+                        contentType: 'application/json',
+                        data: JSON.stringify({name: newName, pages: newPages, author: newAuthor}),
+                        success: function(data){
+                            $("tr[data-id='" + dictionaryId + "'] .dictionaryName").text(data.name);
+                            $("tr[data-id='" + dictionaryId + "'] .dictionaryPages").text(data.pages);
+                            $("tr[data-id='" + dictionaryId + "'] .dictionaryAuthor").text(data.author);
+                        }
+                    });
+                }
+            });
+
+            // Функція для обробки кліків на кнопку Delete
+            $(document).on('click', '.deleteDictionary', function(){
+                var dictionaryId = $(this).data('id');
+                var confirmation = confirm("Are you sure you want to delete this dictionary?");
+                if (confirmation) {
+                    $.ajax({
+                        url: '/delete_dictionary/' + dictionaryId + '/',
+                        type: 'DELETE',
+                        success: function(){
+                            // Видаляємо словник з таблиці
+                            $("tr[data-id='" + dictionaryId + "']").remove();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Add Dictionary</h1>
+    <form id="addDictionaryForm" action="{% url 'create_dictionary' %}" method="post">
+        {% csrf_token %}
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="pages">Pages:</label>
+        <input type="number" id="pages" name="pages" required>
+        <label for="author">Author:</label>
+        <input type="text" id="author" name="author" required>
+        <button type="submit">Add Dictionary</button>
+    </form>
+
+    <h1>Dictionary List</h1>
+    <table border="1" id="dictionaryTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Pages</th>
+                <th>Author</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dictionary in dictionaries_data %}
+            <tr data-id="{{ dictionary.id }}">
+                <td>{{ dictionary.id }}</td>
+                <td class="dictionaryName">{{ dictionary.name }}</td>
+                <td class="dictionaryPages">{{ dictionary.pages }}</td>
+                <td class="dictionaryAuthor">{{ dictionary.author }}</td>
+                <td>
+                    <button class="editDictionary" data-id="{{ dictionary.id }}">Edit</button>
+                    <button class="deleteDictionary" data-id="{{ dictionary.id }}">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
