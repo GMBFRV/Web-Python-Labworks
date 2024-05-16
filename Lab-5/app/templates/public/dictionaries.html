@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dictionary List</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $("#addDictionaryForm").submit(function(event){
+                event.preventDefault(); // Предотвращаем отправку формы по умолчанию
+                var formData = $(this).serialize(); // Получаем данные формы
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: $(this).attr('method'),
+                    data: formData,
+                    success: function(data){
+                        // Добавляем новый словарь к таблице
+                        var newDictionaryRow = "<tr><td>" + data.id + "</td><td>" + data.name + "</td><td>" + data.pages + "</td><td>" + data.author + "</td></tr>";
+                        $("#dictionaryTable tbody").append(newDictionaryRow);
+                        // Очищаем поля ввода
+                        $("#name").val("");
+                        $("#pages").val("");
+                        $("#author").val("");
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Add Dictionary</h1>
+    <form id="addDictionaryForm" action="{% url 'create_dictionary' %}" method="post">
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="pages">Pages:</label>
+        <input type="number" id="pages" name="pages" required>
+        <label for="author">Author:</label>
+        <input type="text" id="author" name="author" required>
+        <button type="submit">Add Dictionary</button>
+    </form>
+
+    <h1>Dictionary List</h1>
+    <table border="1" id="dictionaryTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Pages</th>
+                <th>Author</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for dictionary in dictionaries_data %}
+            <tr>
+                <td>{{ dictionary.id }}</td>
+                <td>{{ dictionary.name }}</td>
+                <td>{{ dictionary.pages }}</td>
+                <td>{{ dictionary.author }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

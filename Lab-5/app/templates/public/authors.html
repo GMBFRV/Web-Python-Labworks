@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Author List</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $("#registerForm").submit(function(event){
+                event.preventDefault();
+                var formData = $(this).serialize();
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: $(this).attr('method'),
+                    data: formData,
+                    success: function(data){
+                        var newAuthorRow = "<tr><td>" + data.id + "</td><td>" + data.name + "</td><td>" + data.books + "</td><td>" + data.rating + "</td></tr>";
+                        $("#authorTable tbody").append(newAuthorRow);
+                        // Очищуємо поля вводу
+                        $("#name").val("");
+                        $("#books").val("");
+                        $("#rating").val("");
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Register</h1>
+    <form id="registerForm" action="{% url 'create_author' %}" method="post">
+        {% csrf_token %}
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="books">Books:</label>
+        <input type="number" id="books" name="books" required>
+        <label for="rating">Rating:</label>
+        <input type="number" id="rating" name="rating" required>
+        <button type="submit">Register</button>
+    </form>
+
+    <h1>Author List</h1>
+    <table border="1" id="authorTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Books</th>
+                <th>Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for author in authors_data %}
+            <tr>
+                <td>{{ author.id }}</td>
+                <td>{{ author.name }}</td>
+                <td>{{ author.books }}</td>
+                <td>{{ author.rating }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

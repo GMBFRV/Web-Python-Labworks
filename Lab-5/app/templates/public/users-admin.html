@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User List</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            // Функция для обработки события клика на кнопку Edit
+            $(document).on('click', '.editUser', function(){
+                var userId = $(this).data('id');
+                var userName = $(this).closest('tr').find('.userName').text();
+                var userAge = $(this).closest('tr').find('.userAge').text();
+                var newName = prompt("Enter new name", userName);
+                var newAge = prompt("Enter new age", userAge);
+                if (newName !== null && newAge !== null) {
+                    $.ajax({
+                        url: '/edit_user/' + userId + '/',
+                        type: 'PUT',
+                        contentType: 'application/json', // Установка заголовка Content-Type на application/json
+                        data: JSON.stringify({name: newName, age: newAge}),
+                         success: function(data){
+                                             $("tr[data-id='" + userId + "'] .userName").text(data.name);
+                                            $("tr[data-id='" + userId + "'] .userAge").text(data.age);
+    }
+});
+
+                }
+            });
+
+            // Функция для обработки события клика на кнопку Delete
+            $(document).on('click', '.deleteUser', function(){
+                var userId = $(this).data('id');
+                var confirmation = confirm("Are you sure you want to delete this user?");
+                if (confirmation) {
+                    $.ajax({
+                        url: '/delete_user/' + userId + '/',
+                        type: 'DELETE',
+                        success: function(){
+                            // Удаляем пользователя из таблицы
+                            $("tr[data-id='" + userId + "']").remove();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Register</h1>
+    <form id="registerForm" action="{% url 'create_user' %}" method="post">
+        {% csrf_token %}
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="age">Age:</label>
+        <input type="number" id="age" name="age" required>
+        <button type="submit">Register</button>
+    </form>
+
+    <h1>User List</h1>
+    <table border="1" id="userTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Age</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users_data %}
+            <tr data-id="{{ user.id }}">
+                <td>{{ user.id }}</td>
+                <td class="userName">{{ user.name }}</td>
+                <td class="userAge">{{ user.age }}</td>
+                <td>
+                    <button class="editUser" data-id="{{ user.id }}">Edit</button>
+                    <button class="deleteUser" data-id="{{ user.id }}">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

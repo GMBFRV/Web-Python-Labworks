@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Author List</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            // Функція для обробки натискання на кнопку Edit
+            $(document).on('click', '.editAuthor', function(){
+                var authorId = $(this).data('id');
+                var authorName = $(this).closest('tr').find('.authorName').text();
+                var authorBooks = $(this).closest('tr').find('.authorBooks').text();
+                var authorRating = $(this).closest('tr').find('.authorRating').text();
+                var newName = prompt("Enter new name", authorName);
+                var newBooks = prompt("Enter new number of books", authorBooks);
+                var newRating = prompt("Enter new rating", authorRating);
+                if (newName !== null && newBooks !== null && newRating !== null) {
+                    $.ajax({
+                        url: '/edit_author/' + authorId + '/',
+                        type: 'PUT',
+                        contentType: 'application/json',
+                        data: JSON.stringify({name: newName, books: newBooks, rating: newRating}),
+                        success: function(data){
+                            $("tr[data-id='" + authorId + "'] .authorName").text(data.name);
+                            $("tr[data-id='" + authorId + "'] .authorBooks").text(data.books);
+                            $("tr[data-id='" + authorId + "'] .authorRating").text(data.rating);
+                        }
+                    });
+                }
+            });
+
+            // Функція для обробки натискання на кнопку Delete
+            $(document).on('click', '.deleteAuthor', function(){
+                var authorId = $(this).data('id');
+                var confirmation = confirm("Are you sure you want to delete this author?");
+                if (confirmation) {
+                    $.ajax({
+                        url: '/delete_author/' + authorId + '/',
+                        type: 'DELETE',
+                        success: function(){
+                            // Видалення автора з таблиці
+                            $("tr[data-id='" + authorId + "']").remove();
+                        }
+                    });
+                }
+            });
+
+            // Функція для обробки натискання кнопки Add Author
+            $("#addAuthorForm").submit(function(event){
+                event.preventDefault(); // Перешкоджаємо стандартному відправленню форми
+                var formData = $(this).serialize(); // Отримуємо дані форми
+                $.ajax({
+                    url: $(this).attr('action'),
+                    type: $(this).attr('method'),
+                    data: formData,
+                    success: function(data){
+                        // Додаємо нового автора до таблиці
+                        var newAuthorRow = "<tr><td>" + data.id + "</td><td>" + data.name + "</td><td>" + data.books + "</td><td>" + data.rating + "</td><td><button class='editAuthor' data-id='" + data.id + "'>Edit</button><button class='deleteAuthor' data-id='" + data.id + "'>Delete</button></td></tr>";
+                        $("#authorTable tbody").append(newAuthorRow);
+                        // Очищуємо поля вводу
+                        $("#name").val("");
+                        $("#books").val("");
+                        $("#rating").val("");
+                    }
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <h1>Add Author</h1>
+    <form id="addAuthorForm" action="{% url 'create_author' %}" method="post">
+        {% csrf_token %}
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name" required>
+        <label for="books">Number of Books:</label>
+        <input type="number" id="books" name="books" required>
+        <label for="rating">Rating:</label>
+        <input type="number" id="rating" name="rating" step="0.1" required>
+        <button type="submit">Add Author</button>
+    </form>
+
+    <h1>Author List</h1>
+    <table border="1" id="authorTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Number of Books</th>
+                <th>Rating</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for author in authors_data %}
+            <tr data-id="{{ author.id }}">
+                <td>{{ author.id }}</td>
+                <td class="authorName">{{ author.name }}</td>
+                <td class="authorBooks">{{ author.books }}</td>
+                <td class="authorRating">{{ author.rating }}</td>
+                <td>
+                    <button class="editAuthor" data-id="{{ author.id }}">Edit</button>
+                    <button class="deleteAuthor" data-id="{{ author.id }}">Delete</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
+
+
